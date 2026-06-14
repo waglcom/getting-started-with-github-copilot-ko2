@@ -19,15 +19,56 @@ document.addEventListener("DOMContentLoaded", () => {
         activityCard.className = "activity-card";
 
         const spotsLeft = details.max_participants - details.participants.length;
+        
+        // 참가자 목록 생성 (삭제 버튼 포함)
+        const participantsList = details.participants.map(email => `
+          <li>
+            <span>${email}</span>
+            <button class="delete-btn" data-activity="${name}" data-email="${email}" title="참가자 삭제">×</button>
+          </li>
+        `).join("");
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>일정:</strong> ${details.schedule}</p>
           <p><strong>잔여 인원:</strong> ${spotsLeft}자리 남음</p>
+          <div class="participants-section">
+            <p><strong>현재 참가자:</strong></p>
+            <ul class="participants-list">
+              ${participantsList}
+            </ul>
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
+        
+        // 삭제 버튼 이벤트 리스너 추가
+        const deleteButtons = activityCard.querySelectorAll(".delete-btn");
+        deleteButtons.forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const activityName = btn.getAttribute("data-activity");
+            const email = btn.getAttribute("data-email");
+            
+            try {
+              const response = await fetch(
+                `/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`,
+                { method: "POST" }
+              );
+              
+              if (response.ok) {
+                // 활동 목록 새로고침
+                fetchActivities();
+              } else {
+                alert("참가자 삭제에 실패했습니다.");
+              }
+            } catch (error) {
+              console.error("Error deleting participant:", error);
+              alert("참가자 삭제 중 오류가 발생했습니다.");
+            }
+          });
+        });
 
         // 선택 드롭다운에 활동 옵션 추가
         const option = document.createElement("option");
@@ -62,6 +103,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // 활동 목록 새로고침
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "오류가 발생했습니다";
         messageDiv.className = "error";

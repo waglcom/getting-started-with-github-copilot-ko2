@@ -105,3 +105,22 @@ def signup_for_activity(activity_name: str, email: str):
     # 학생 추가
     activity["participants"].append(email)
     return {"message": f"{email} 님이 {activity_name} 활동에 신청되었습니다"}
+
+
+@app.post("/activities/{activity_name}/unregister")
+def unregister_from_activity(activity_name: str, email: str):
+    """학생을 활동에서 등록 해제합니다."""
+    # 활동 존재 여부 확인
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="활동을 찾을 수 없습니다")
+
+    # 대상 활동 조회
+    activity = activities[activity_name]
+
+    # 학생이 이 활동에 등록되어 있는지 확인
+    if email not in activity["participants"]:
+        raise HTTPException(status_code=400, detail="이 활동에 등록되지 않은 학생입니다")
+
+    # 학생 제거
+    activity["participants"].remove(email)
+    return {"message": f"{email} 님이 {activity_name} 활동에서 등록 해제되었습니다"}
